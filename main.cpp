@@ -1,36 +1,40 @@
-//#include "hidlibrary.h"
 #include <iostream>
 #include "hidapi.h"
 
 using namespace std;
 
- #define MAX_STR 255
+// Некоторые константы
+enum
+{
+	STR_MAX_SIZE = 255,
+	BUFFER_MAX_SIZE = 65,
+};
 
 int main(int argc, _TCHAR* argv[])
 {
+    // Инициализация объектов
 	int res;
-	unsigned char buf[65];
-	wchar_t wstr[MAX_STR];
+	unsigned char buf[BUFFER_MAX_SIZE];
+	wchar_t wstr[STR_MAX_SIZE];
 	hid_device* handle;
 	int i;
-
 	hid_device_info *deviceList, *cur_dev;
 
-	// Initialize the hidapi library
+	// Инициализация либы hidapi
 	if(hid_init())
 	{
 		cout << "Init error" << endl;
 	}
 
-	// Enumerate the HID Devices: args = 0 means all devices:
+	// Перечисление всех HID устройств (аргументы 0x00 означают "все устройства")
 	deviceList = hid_enumerate(0x00, 0x00);
 	if(deviceList == nullptr)
 	{
-		cout << "There is no device" << endl;
+		cout << "There is no device." << endl;
 		return 0;
 	}
 
-	// Get full info about all devices:
+	// Получение полной информации обо всех устройствах:
 	uint16_t vendorId;
 	uint16_t productId;
 	while(deviceList != nullptr)
@@ -53,79 +57,31 @@ int main(int argc, _TCHAR* argv[])
 	}
 	hid_free_enumeration(deviceList);
 	
-	// Open the device using the VID, PID,
-	// and optionally the Serial number.
-	//const wchar_t serialNumber = "01DD42C0\0";
-	//handle = hid_open(vendorId, productId, (wchar_t*)"01DE42E0\0");
+	// Открыть устройство с помощью VID и PID, опционально серийный номер
+	vendorId = 1155;
+	productId = 22352;
 	handle = hid_open(vendorId, productId, NULL);
-	cout << hid_error(handle) << endl;
-	res = hid_read(handle, buf, 65);
 
-	// Print out the returned buffer.
+	// Вывод номера ошибки   при открытии (0 - значит ошибки нет)
+	cout << "Error number: "<< hid_error(handle) << endl;
+
+	// Прочитать данные с утройства
+	res = hid_read(handle, buf, 4);
+
+	// Вывести данные прочитанные данные.
 	for (i = 0; i < 4; i++)
-		printf("buf[%d]: %d\n", i, buf[i]);
-	
-	/*
-	// Read Indexed String 1
-	res = hid_get_indexed_string(handle, 1, wstr, MAX_STR);
-	wprintf(L"Indexed String 1: %s\n", wstr);
+		cout << "buf[" << i << "]" << buf[i] << endl;
+	cout << endl;
 
-	// Toggle LED (cmd 0x80). The first byte is the report number (0x0).
-	buf[0] = 0x0;
-	buf[1] = 0x80;
-	res = hid_write(handle, buf, 65);
-
-	// Request state (cmd 0x81). The first byte is the report number (0x0).
-	buf[0] = 0x0;
-	buf[1] = 0x81;
-	res = hid_write(handle, buf, 65);
-
-	// Read requested state
-	res = hid_read(handle, buf, 65);
-
-	// Print out the returned buffer.
-	for (i = 0; i < 4; i++)
-		printf("buf[%d]: %d\n", i, buf[i]);
+	//// Запись данных в устройство
+	//buf[0] = 0x0;
+	//buf[1] = 0x80;
+	//res = hid_write(handle, buf, 65);
 
 	// Finalize the hidapi library
-	res = hid_exit();
-	*/
-
-	/*
-	// Создаем экземпляр класса с типом нашей структуры:
-	HIDLibrary<int> hid;
-
-	// Кажется, получаем количество Hid устройств
-	// От первоисточника: узнаем все Hid устройства vid_16c0&pid_05df
-	// vid и pid указаны в hidlibrary.h константой idstring
-	int n;
-	n = hid.EnumerateHIDDevices();
-
-	// Проверяем доступность либы
-	if (hid.IsAvailableLib())
-	{
-		cout << "Lib Is Available :)\n\n";
-	}
-	else
-	{
-		cout << "Lib Is not Available :(\n\n";
-	}
-
-
-	// Выводим имена всех Hid устройств
-	for (uint8_t i=0; i<n; i++)
-	{
-		cout << "Hid " << i + 0 << ".\n";
-		cout << "IsItConnected = " << hid.Connect(i) << endl;
-		cout << "GetConnectedDevicePath: " << hid.GetConnectedDevicePath() << endl;
-		cout << "GetConnectedDeviceName: " << hid.GetConnectedDeviceName() << endl;
-		cout << "IsConnectedDevice: " << hid.IsConnectedDevice() << "\n\n";
-	}
-	*/
-
 	hid_exit();
-	
-	cout << res << endl;
+
+	// Ожидания считывания символа перед закрытием консоли
 	char ch;
 	cin >> ch;
 	return 0;
